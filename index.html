@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Castle Mini 4WD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Sora:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="top-bar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <h1>Castle Mini 4WD</h1>
+      </div>
+      <div class="hud-stats">
+        <div class="stat" title="Stars">
+          <span class="stat-icon">*</span>
+          <span id="star-count">0</span>
+        </div>
+        <div class="stat" title="Level">
+          <span class="stat-label">Lv</span>
+          <span id="level-num">1</span>
+        </div>
+        <div class="stat" title="Distance">
+          <span class="stat-label">m</span>
+          <span id="dist-num">0</span>
+        </div>
+        <div class="stat" title="Speed">
+          <span class="stat-label">spd</span>
+          <span id="speed-num">0</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="stage">
+      <canvas id="race-canvas" width="960" height="540"></canvas>
+      <div id="toast" class="toast" hidden></div>
+    </main>
+
+    <section class="inventory">
+      <div class="inv-item">
+        <span class="inv-label">Protector</span>
+        <span id="protector-count">2</span>
+        <button type="button" id="btn-protector" class="inv-btn">Use</button>
+      </div>
+      <div class="inv-item">
+        <span class="inv-label">Engine</span>
+        <span id="engine-count">2</span>
+        <button type="button" id="btn-engine" class="inv-btn accent">Boost</button>
+      </div>
+      <div class="inv-item">
+        <span class="inv-label">Restart</span>
+        <span id="restart-count">1</span>
+        <button type="button" id="btn-restart" class="inv-btn warn">Once</button>
+      </div>
+      <button type="button" id="btn-shop" class="shop-open">Shop</button>
+    </section>
+
+    <section class="controls">
+      <div class="dpad" aria-label="Direction controls">
+        <button type="button" class="dir" data-dir="up" id="btn-up">▲</button>
+        <button type="button" class="dir" data-dir="left" id="btn-left">◀</button>
+        <button type="button" class="dir" data-dir="right" id="btn-right">▶</button>
+        <button type="button" class="dir" data-dir="down" id="btn-down">▼</button>
+      </div>
+
+      <div class="accel-panel">
+        <div class="accel-readout">
+          <span>Accel</span>
+          <strong id="accel-value">0</strong>
+          <span class="accel-max">/ 200</span>
+        </div>
+        <button type="button" id="btn-accel" class="accel-btn" aria-label="Accelerate">
+          HOLD
+        </button>
+        <input type="range" id="accel-slider" min="0" max="200" value="0" />
+      </div>
+    </section>
+
+    <!-- Title overlay -->
+    <div id="overlay-title" class="overlay">
+      <div class="panel hero-panel">
+        <p class="eyebrow">Tournament Circuit</p>
+        <h2>Castle Mini 4WD</h2>
+        <p class="lede">Three four-wheel-drive racers. One is yours. Two AI knights drive hard and fast through the castle course.</p>
+        <ul class="howto">
+          <li>▲ forward · ▼ reverse · ◀ left · ▶ right (combine freely)</li>
+          <li>White HOLD raises acceleration up to 200</li>
+          <li>Triangles every 5 m · ? boxes every 15 m</li>
+          <li>Engine boost is fierce — turn in time or fly out</li>
+        </ul>
+        <button type="button" id="btn-start" class="cta">Start Race</button>
+      </div>
+    </div>
+
+    <!-- Shop overlay -->
+    <div id="overlay-shop" class="overlay" hidden>
+      <div class="panel shop-panel">
+        <h2>Armory Shop</h2>
+        <p class="lede">Spend stars earned from finished levels.</p>
+        <div class="shop-grid">
+          <button type="button" class="shop-card" data-buy="protector">
+            <span class="shop-name">Protector</span>
+            <span class="shop-desc">Shield from one fly-out (max 2 held)</span>
+            <span class="shop-price">★ 100</span>
+          </button>
+          <button type="button" class="shop-card" data-buy="engine">
+            <span class="shop-name">Engine</span>
+            <span class="shop-desc">Extra boost charge for this level</span>
+            <span class="shop-price">★ 300</span>
+          </button>
+          <button type="button" class="shop-card" data-buy="restart">
+            <span class="shop-name">Restart</span>
+            <span class="shop-desc">One mid-level reset (1 per level)</span>
+            <span class="shop-price">★ 200</span>
+          </button>
+        </div>
+        <p class="shop-note">After both protectors are spent, buy another with ★ 100.</p>
+        <button type="button" id="btn-close-shop" class="cta secondary">Back</button>
+      </div>
+    </div>
+
+    <!-- Result overlay -->
+    <div id="overlay-result" class="overlay" hidden>
+      <div class="panel result-panel">
+        <h2 id="result-title">Finish!</h2>
+        <p id="result-body" class="lede"></p>
+        <button type="button" id="btn-next" class="cta">Next Level</button>
+        <button type="button" id="btn-retry" class="cta secondary">Retry</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
