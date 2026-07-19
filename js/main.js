@@ -122,7 +122,6 @@ const el = {
 
 const input = {
   up: false,
-  down: false,
   left: false,
   right: false,
   accel: 0,
@@ -395,10 +394,10 @@ function buy(itemId) {
 function update(dt) {
   if (!state.running || !state.track) return;
 
-  if (input.accelHold) {
+  // ▲ / W (or accel button) charges speed; release drifts down
+  if (input.accelHold || input.up) {
     input.accel = Math.min(200, input.accel + 90 * dt);
   } else if (!document.activeElement || document.activeElement.id !== "accel-slider") {
-    // Drift down gently so the white button must be held for top speed
     input.accel = Math.max(0, input.accel - 25 * dt);
   }
 
@@ -472,8 +471,6 @@ function bindControls() {
   const dirMap = {
     ArrowUp: "up",
     KeyW: "up",
-    ArrowDown: "down",
-    KeyS: "down",
     ArrowLeft: "left",
     KeyA: "left",
     ArrowRight: "right",
@@ -485,12 +482,7 @@ function bindControls() {
     if (d) {
       input[d] = true;
       document.getElementById(`btn-${d}`)?.classList.add("active");
-      e.preventDefault();
-    }
-    // 3 = accelerate (hold)
-    if (e.code === "Digit3" || e.code === "Numpad3") {
-      input.accelHold = true;
-      el.accelBtn.classList.add("active");
+      if (d === "up") el.accelBtn.classList.add("active");
       e.preventDefault();
     }
     if (e.repeat) return;
@@ -529,18 +521,16 @@ function bindControls() {
     if (d) {
       input[d] = false;
       document.getElementById(`btn-${d}`)?.classList.remove("active");
-    }
-    if (e.code === "Digit3" || e.code === "Numpad3") {
-      input.accelHold = false;
-      el.accelBtn.classList.remove("active");
+      if (d === "up" && !input.accelHold) el.accelBtn.classList.remove("active");
     }
   });
 
-  for (const dir of ["up", "down", "left", "right"]) {
+  for (const dir of ["up", "left", "right"]) {
     const btn = document.getElementById(`btn-${dir}`);
     const set = (v) => {
       input[dir] = v;
       btn.classList.toggle("active", v);
+      if (dir === "up") el.accelBtn.classList.toggle("active", v || input.accelHold);
     };
     btn.addEventListener("pointerdown", (e) => {
       btn.setPointerCapture(e.pointerId);
@@ -553,7 +543,7 @@ function bindControls() {
 
   const holdAccel = (v) => {
     input.accelHold = v;
-    el.accelBtn.classList.toggle("active", v);
+    el.accelBtn.classList.toggle("active", v || input.up);
   };
   el.accelBtn.addEventListener("pointerdown", (e) => {
     el.accelBtn.setPointerCapture(e.pointerId);

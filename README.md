@@ -16,13 +16,10 @@ Then visit `http://localhost:8080`.
 
 | Input | Action |
 | --- | --- |
-| ▲ / W | Forward |
-| ▼ / S | Reverse |
+| ▲ / W (hold) | Accelerate + forward (0–200) |
 | ◀ / A | Left |
 | ▶ / D | Right |
-| Directions combine | e.g. right + reverse = right and back |
 | **1** | Start race |
-| **3** (hold) | Acceleration (0–200) |
 | **5** | Super jet engine boost (2 per level) |
 | **8** | Protector / shield (max 2 held) |
 | **7** | Restart (once per level) |

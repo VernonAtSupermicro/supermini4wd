@@ -80,17 +80,13 @@ export function updatePlayer(car, input, dt, track) {
   if (car.finished) return;
 
   let steer = 0;
-  let drive = 0;
   if (input.left) steer -= 1;
   if (input.right) steer += 1;
-  if (input.up) drive += 1;
-  if (input.down) drive -= 1;
 
   car.accel = Math.max(0, Math.min(200, input.accel));
 
-  // Left/right shift lane; combine with reverse for "right and back"
-  const steerSpeed = drive < 0 ? 70 : 95;
-  car.lateral += steer * steerSpeed * dt;
+  // Left/right shift lane while holding ▲ to accelerate forward
+  car.lateral += steer * 95 * dt;
 
   const half = track.halfWidth - 22;
   let maxSpd = (8 + (car.accel / 200) * 30) * SPEED_SCALE;
@@ -99,13 +95,12 @@ export function updatePlayer(car, input, dt, track) {
     car.boostTimer -= dt;
   }
 
+  // ▲ / W charges accel and drives forward; no reverse
   let forwardWant = 0;
   if (car.accel > 0) {
-    forwardWant = drive < 0 ? -maxSpd * 0.4 : maxSpd * (car.accel / 200);
-  } else if (drive > 0) {
+    forwardWant = maxSpd * (car.accel / 200);
+  } else if (input.up) {
     forwardWant = maxSpd * 0.35;
-  } else if (drive < 0) {
-    forwardWant = -maxSpd * 0.3;
   }
 
   car.speed += (forwardWant - car.speed) * Math.min(1, 3.4 * dt);
