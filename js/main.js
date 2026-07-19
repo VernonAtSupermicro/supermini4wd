@@ -543,67 +543,162 @@ function bindControls() {
     }
   });
 
-  /** 多指觸控：用 pointerId 追蹤，避免一手按住加速時另一手按功能鍵會鬆開 */
-  function bindHoldControl(btn, onHold) {
-    const pointers = new Set();
-    const sync = () => onHold(pointers.size > 0);
+  const btnUp = document.getElementById("btn-up");
+  const btnLeft = document.getElementById("btn-left");
+  const btnRight = document.getElementById("btn-right");
+  const btnProtector = document.getElementById("btn-protector");
+  const btnEngine = document.getElementById("btn-engine");
+  const btnRestart = document.getElementById("btn-restart");
 
-    btn.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "mouse" && e.button !== 0) return;
-      pointers.add(e.pointerId);
-      try {
-        btn.setPointerCapture(e.pointerId);
-      } catch (_) {
-        /* ignore */
+  const holdButtons = {
+    up: btnUp,
+    left: btnLeft,
+    right: btnRight,
+    accel: el.accelBtn,
+  };
+  /** touch.identifier / pointerId → hold key */
+  const holdByPointer = new Map();
+  const holdCounts = { up: 0, left: 0, right: 0, accel: 0 };
+
+  function refreshHoldState() {
+    for (const key of ["up", "left", "right"]) {
+      const held = holdCounts[key] > 0;
+      input[key] = held;
+      holdButtons[key].classList.toggle("active", held);
+    }
+    input.accelHold = holdCounts.accel > 0;
+    el.accelBtn.classList.toggle("active", input.accelHold || input.up);
+  }
+
+  function pressHold(key, pointerKey) {
+    if (!key || holdByPointer.has(pointerKey)) return;
+    holdByPointer.set(pointerKey, key);
+    holdCounts[key] += 1;
+    refreshHoldState();
+  }
+
+  function releaseHold(pointerKey) {
+    const key = holdByPointer.get(pointerKey);
+    if (!key) return;
+    holdByPointer.delete(pointerKey);
+    holdCounts[key] = Math.max(0, holdCounts[key] - 1);
+    refreshHoldState();
+  }
+
+  function pointIn(btn, x, y) {
+    const r = btn.getBoundingClientRect();
+    // 稍微擴大命中區，方便多指點按
+    const pad = 6;
+    return (
+      x >= r.left - pad &&
+      x <= r.right + pad &&
+      y >= r.top - pad &&
+      y <= r.bottom + pad
+    );
+  }
+
+  function hitTestHold(x, y) {
+    for (const [key, btn] of Object.entries(holdButtons)) {
+      if (pointIn(btn, x, y)) return key;
+    }
+    return null;
+  }
+
+  const actionButtons = [
+    { btn: btnProtector, action: useProtector },
+    { btn: btnEngine, action: useEngine },
+    { btn: btnRestart, action: useRestart },
+  ];
+
+  function hitTestAction(x, y, eventTarget) {
+    if (eventTarget && eventTarget.closest) {
+      const fromEvent = eventTarget.closest(
+        "#btn-protector, #btn-engine, #btn-restart"
+      );
+      if (fromEvent && !fromEvent.disabled) {
+        if (fromEvent.id === "btn-protector") return useProtector;
+        if (fromEvent.id === "btn-engine") return useEngine;
+        if (fromEvent.id === "btn-restart") return useRestart;
       }
-      sync();
+    }
+    for (const { btn, action } of actionButtons) {
+      if (!btn.disabled && pointIn(btn, x, y)) return action;
+    }
+    return null;
+  }
+
+  const appEl = document.getElementById("app");
+
+  // 手機多指：capture 階段用原生 touch + 座標命中（避免 setPointerCapture 擋第二指）
+  appEl.addEventListener(
+    "touchstart",
+    (e) => {
+      let used = false;
+      for (const t of e.changedTouches) {
+        const holdKey = hitTestHold(t.clientX, t.clientY);
+        if (holdKey) {
+          pressHold(holdKey, `t${t.identifier}`);
+          used = true;
+          continue;
+        }
+        const action = hitTestAction(t.clientX, t.clientY, e.target);
+        if (action) {
+          action();
+          used = true;
+        }
+      }
+      if (used) e.preventDefault();
+    },
+    { passive: false, capture: true }
+  );
+
+  const endTouches = (e) => {
+    for (const t of e.changedTouches) {
+      releaseHold(`t${t.identifier}`);
+    }
+  };
+  appEl.addEventListener("touchend", endTouches, { capture: true });
+  appEl.addEventListener("touchcancel", endTouches, { capture: true });
+
+  // 滑鼠 / 觸控筆：用 pointer（略過 touch，避免與上面重複）
+  function bindMouseHold(btn, key) {
+    btn.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "touch") return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      pressHold(key, `p${e.pointerId}`);
       e.preventDefault();
     });
-
-    const release = (e) => {
-      if (!pointers.has(e.pointerId)) return;
-      pointers.delete(e.pointerId);
-      sync();
+    const up = (e) => {
+      if (e.pointerType === "touch") return;
+      releaseHold(`p${e.pointerId}`);
     };
-    btn.addEventListener("pointerup", release);
-    btn.addEventListener("pointercancel", release);
-    btn.addEventListener("lostpointercapture", release);
+    btn.addEventListener("pointerup", up);
+    btn.addEventListener("pointercancel", up);
   }
 
-  for (const dir of ["up", "left", "right"]) {
-    const btn = document.getElementById(`btn-${dir}`);
-    bindHoldControl(btn, (held) => {
-      input[dir] = held;
-      btn.classList.toggle("active", held);
-      if (dir === "up") el.accelBtn.classList.toggle("active", held || input.accelHold);
-    });
-  }
-
-  bindHoldControl(el.accelBtn, (held) => {
-    input.accelHold = held;
-    el.accelBtn.classList.toggle("active", held || input.up);
-  });
+  bindMouseHold(btnUp, "up");
+  bindMouseHold(btnLeft, "left");
+  bindMouseHold(btnRight, "right");
+  bindMouseHold(el.accelBtn, "accel");
 
   el.accelSlider.addEventListener("input", () => {
     input.accel = Number(el.accelSlider.value);
     el.accelValue.textContent = String(Math.round(input.accel));
   });
 
-  /** 功能鍵用 pointerdown，可與按住加速同時觸發（不依賴 click） */
-  function bindActionButton(id, action) {
-    const btn = document.getElementById(id);
+  function bindMouseAction(btn, action) {
     btn.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "touch") return;
       if (btn.disabled) return;
       if (e.pointerType === "mouse" && e.button !== 0) return;
       e.preventDefault();
-      e.stopPropagation();
       action();
     });
   }
 
-  bindActionButton("btn-protector", useProtector);
-  bindActionButton("btn-engine", useEngine);
-  bindActionButton("btn-restart", useRestart);
+  bindMouseAction(btnProtector, useProtector);
+  bindMouseAction(btnEngine, useEngine);
+  bindMouseAction(btnRestart, useRestart);
 
   document.getElementById("btn-start").addEventListener("click", () => startLevel(1));
   document.getElementById("btn-title-shop").addEventListener("click", openShop);
