@@ -455,10 +455,11 @@ function frame(ts) {
 }
 
 function bindControls() {
-  // 鎖定單螢幕：禁止滾輪造成頁面捲動
+  // 鎖定單螢幕：禁止滾輪造成頁面捲動（商店 / 說明面板可捲動）
   window.addEventListener(
     "wheel",
     (e) => {
+      if (e.target.closest(".screen-shop, .panel, .shop-grid")) return;
       e.preventDefault();
     },
     { passive: false }
@@ -466,11 +467,24 @@ function bindControls() {
   window.addEventListener(
     "touchmove",
     (e) => {
-      if (e.target.closest("input, button, .shop-buy-btn")) return;
+      if (
+        e.target.closest(
+          "input, button, .shop-buy-btn, .screen-shop, .panel, .shop-grid"
+        )
+      ) {
+        return;
+      }
       e.preventDefault();
     },
     { passive: false }
   );
+
+  // 手機長按控制鈕時不跳出系統選單
+  document.getElementById("app").addEventListener("contextmenu", (e) => {
+    if (e.target.closest("button, .dir, .accel-btn, canvas")) {
+      e.preventDefault();
+    }
+  });
 
   const dirMap = {
     ArrowUp: "up",

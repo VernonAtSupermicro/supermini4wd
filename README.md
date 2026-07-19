@@ -6,6 +6,8 @@ Online web racing game with three four-wheel-drive mini cars on a castle-and-kni
 
 Double-click `index.html` to open it in Chrome (or any browser). No local server needed.
 
+Works on phones and tablets (portrait / landscape) with on-screen controls.
+
 Optional local server:
 
 ```bash

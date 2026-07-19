@@ -2,7 +2,11 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#12100e" />
   <title>城堡迷你四驅</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -74,7 +78,8 @@
           <span class="accel-max">/ 200</span>
         </div>
         <button type="button" id="btn-accel" class="accel-btn" aria-label="加速">
-          按住 <kbd>▲</kbd>
+          <span class="accel-label-desktop">按住 <kbd>▲</kbd></span>
+          <span class="accel-label-mobile">按住加速</span>
         </button>
         <input type="range" id="accel-slider" min="0" max="200" value="0" />
       </div>
@@ -86,11 +91,16 @@
         <p class="eyebrow">錦標賽賽道</p>
         <h2>城堡迷你四驅</h2>
         <p class="lede">三台四驅賽車同場競技。一台由你操控，兩台由電腦騎士高速追逐。</p>
-        <ul class="howto">
+        <ul class="howto howto-desktop">
           <li>▲ / W 加速前進 · ◀ / A · ▶ / D</li>
           <li><kbd>1</kbd> 開始 · <kbd>5</kbd> 超級噴射</li>
           <li><kbd>8</kbd> 防護罩 · <kbd>7</kbd> 重啟 · <kbd>Q</kbd> 商店購買</li>
           <li>三角形每 5 公尺 · ? 箱每 15 公尺 · 噴射時記得轉彎</li>
+        </ul>
+        <ul class="howto howto-mobile">
+          <li>按住下方「加速」前進，用 ◀ ▶ 轉彎</li>
+          <li>上方可使用防護罩、噴射、重啟與商店</li>
+          <li>噴射時記得及時轉彎，避免飛出跑道</li>
         </ul>
         <div class="title-actions">
           <button type="button" id="btn-title-shop" class="cta secondary">商店購買 <kbd>Q</kbd></button>

@@ -25,6 +25,7 @@ body {
   margin: 0;
   width: 100%;
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
   touch-action: manipulation;
@@ -44,7 +45,11 @@ body {
   height: 100%;
   max-height: 100dvh;
   margin: 0 auto;
-  padding: 8px 10px;
+  padding:
+    max(8px, env(safe-area-inset-top))
+    max(10px, env(safe-area-inset-right))
+    max(8px, env(safe-area-inset-bottom))
+    max(10px, env(safe-area-inset-left));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: 6px;
@@ -431,6 +436,14 @@ kbd {
   flex-shrink: 0;
 }
 
+.howto-mobile {
+  display: none;
+}
+
+.accel-label-mobile {
+  display: none;
+}
+
 .cta {
   display: inline-block;
   width: 100%;
@@ -537,8 +550,10 @@ kbd {
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   min-height: 0;
-  overflow: hidden;
-  align-content: stretch;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  align-content: start;
 }
 
 .shop-card {
@@ -622,54 +637,239 @@ kbd {
   margin: 0;
 }
 
+/* —— Mobile / tablet portrait —— */
 @media (max-width: 700px) {
   #app {
-    padding: 6px;
+    padding:
+      max(6px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(6px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
     gap: 5px;
+  }
+
+  .top-bar {
+    gap: 6px;
+  }
+
+  .brand-mark {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+  }
+
+  .brand h1 {
+    font-size: 0.88rem;
+  }
+
+  .hud-stats {
+    gap: 4px;
+  }
+
+  .stat {
+    min-width: 0;
+    padding: 3px 6px;
+    font-size: 0.72rem;
+    border-radius: 6px;
+  }
+
+  .stat[title="距離"] .stat-label,
+  .stat[title="速度"] .stat-label {
+    display: none;
   }
 
   .inventory {
     grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  .inv-item {
+    padding: 8px;
+    gap: 4px 8px;
+  }
+
+  .inv-label {
+    font-size: 0.72rem;
+  }
+
+  .inv-item > span:nth-child(2) {
+    font-size: 1.05rem;
+  }
+
+  .inv-btn {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
   }
 
   .shop-open {
     grid-column: 1 / -1;
-    min-height: 36px;
+    min-height: 42px;
+    font-size: 0.95rem;
   }
 
   .controls {
     grid-template-columns: auto 1fr;
+    gap: 10px;
+    padding-bottom: 2px;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 42px);
-    grid-template-rows: repeat(3, 34px);
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(3, 48px);
+    gap: 6px;
   }
 
-  .shop-grid {
-    grid-template-columns: 1fr 1fr;
+  .dir {
+    font-size: 1.2rem;
+    border-radius: 12px;
   }
 
-  .howto {
+  .accel-btn {
+    width: min(200px, 88%);
+    height: 58px;
+    font-size: 1.05rem;
+    border-radius: 16px;
+  }
+
+  #accel-slider {
+    width: min(220px, 95%);
+    height: 28px;
+  }
+
+  .accel-readout strong {
+    font-size: 1.25rem;
+  }
+
+  .howto-desktop {
     display: none;
   }
 
-  .brand h1 {
-    font-size: 0.95rem;
+  .howto-mobile {
+    display: block;
+  }
+
+  .accel-label-desktop {
+    display: none;
+  }
+
+  .accel-label-mobile {
+    display: inline;
+  }
+
+  kbd {
+    display: none;
+  }
+
+  .toast {
+    bottom: 8px;
+    font-size: 0.78rem;
+    padding: 7px 12px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .overlay {
+    padding: 8px;
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+
+  .panel {
+    width: 100%;
+    max-height: min(92%, 100%);
+    padding: 14px 14px 12px;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .hero-panel h2,
+  .result-panel h2 {
+    font-size: clamp(1.2rem, 7vw, 1.6rem);
+  }
+
+  .cta {
+    min-height: 48px;
+    padding: 12px 14px;
+    font-size: 1rem;
+  }
+
+  .screen-shop {
+    padding:
+      max(10px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+    gap: 6px;
   }
 
   .shop-header {
     flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .shop-header h2 {
+    font-size: 1.35rem;
+  }
+
+  .shop-lede,
+  .shop-note {
+    font-size: 0.78rem;
+  }
+
+  .shop-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding-right: 2px;
+  }
+
+  .shop-card {
+    padding: 12px;
+    grid-template-rows: auto auto auto auto auto;
+  }
+
+  .shop-buy-btn {
+    min-height: 44px;
+    font-size: 0.95rem;
+  }
+
+  .shop-footer .cta {
+    min-height: 48px;
   }
 }
 
-@media (max-height: 720px) {
-  .howto {
+/* Narrow phones */
+@media (max-width: 380px) {
+  .brand h1 {
+    font-size: 0.8rem;
+  }
+
+  .stat {
+    padding: 3px 5px;
+    font-size: 0.68rem;
+  }
+
+  .dpad {
+    grid-template-columns: repeat(3, 50px);
+    grid-template-rows: repeat(3, 44px);
+  }
+
+  .inv-btn {
+    min-height: 34px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Short desktop windows: tighten chrome without shrinking phone touch pads */
+@media (max-height: 720px) and (min-width: 701px) {
+  .howto-desktop {
     display: none;
   }
 
   .lede {
     font-size: 0.8rem;
+    margin-bottom: 8px;
   }
 
   .dpad {
@@ -679,5 +879,114 @@ kbd {
 
   .accel-btn {
     height: 44px;
+  }
+}
+
+/* Phone landscape: keep canvas large, compact chrome */
+@media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  #app {
+    grid-template-columns: minmax(0, 1fr) minmax(200px, 34%);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: 4px 8px;
+    padding:
+      max(4px, env(safe-area-inset-top))
+      max(8px, env(safe-area-inset-right))
+      max(4px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+  }
+
+  .top-bar {
+    grid-column: 1 / -1;
+  }
+
+  .stage {
+    grid-row: 2 / 4;
+  }
+
+  .inventory {
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+  }
+
+  .shop-open {
+    grid-column: 1 / -1;
+    min-height: 34px;
+  }
+
+  .controls {
+    grid-template-columns: auto 1fr;
+    align-self: end;
+  }
+
+  .dpad {
+    grid-template-columns: repeat(3, 46px);
+    grid-template-rows: repeat(3, 38px);
+    gap: 4px;
+  }
+
+  .accel-btn {
+    height: 46px;
+    width: min(160px, 90%);
+  }
+
+  .accel-readout {
+    font-size: 0.72rem;
+  }
+
+  .howto-mobile {
+    display: none;
+  }
+
+  .overlay {
+    justify-content: center;
+  }
+
+  .panel {
+    max-height: 95%;
+  }
+
+  .shop-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Touch devices: prefer larger hit targets even on wider tablets */
+@media (pointer: coarse) {
+  .dir {
+    min-width: 48px;
+    min-height: 44px;
+  }
+
+  .inv-btn,
+  .shop-open,
+  .cta,
+  .shop-buy-btn {
+    min-height: 44px;
+  }
+
+  .howto-desktop {
+    display: none;
+  }
+
+  .howto-mobile {
+    display: block;
+  }
+
+  .accel-label-desktop {
+    display: none;
+  }
+
+  .accel-label-mobile {
+    display: inline;
+  }
+
+  kbd {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  .howto-mobile {
+    display: none;
   }
 }
