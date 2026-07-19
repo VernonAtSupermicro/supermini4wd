@@ -11,12 +11,14 @@
   ];
 
   const LANE_SPACING = 42;
+  /** AI 專用車道偏離（比起步間距更開，避免兩台電腦重疊） */
+  const AI_LANE_BIAS = { 1: -62, 2: 62 };
   /** 速度恢復為原本（無額外倍率） */
   const SPEED_SCALE = 1;
 
   function createCars() {
     return [0, 1, 2].map((i) => {
-      const lane = (i - 1) * LANE_SPACING;
+      const lane = i === 0 ? -LANE_SPACING : AI_LANE_BIAS[i];
       return {
         id: i,
         isPlayer: i === 0,
@@ -24,10 +26,10 @@
         x: 0,
         y: 0,
         angle: 0,
-        meters: 2 + i * 0.5,
+        meters: 2 + i * 1.2,
         lateral: lane,
         speed: 0,
-        accel: i === 0 ? 0 : 150 + i * 12,
+        accel: i === 0 ? 0 : 145 + i * 18,
         boostTimer: 0,
         shieldActive: false,
         shieldTimer: 0,
@@ -37,16 +39,17 @@
         vx: 0,
         vy: 0,
         crashed: false,
+        aiLaneBias: AI_LANE_BIAS[i] || 0,
         aiTargetLateral: lane,
-        aiBoostCooldown: 2.5 + i,
+        aiBoostCooldown: 2 + i * 3.5,
       };
     });
   }
 
   function resetCarsOnTrack(cars, track) {
     for (const car of cars) {
-      car.meters = 2 + car.id * 0.5;
-      car.lateral = (car.id - 1) * LANE_SPACING;
+      car.meters = 2 + car.id * 1.2;
+      car.lateral = car.isPlayer ? -LANE_SPACING : car.aiLaneBias;
       car.speed = 0;
       car.boostTimer = 0;
       car.flying = false;
@@ -55,7 +58,7 @@
       car.crashed = false;
       car.shieldActive = false;
       car.shieldTimer = 0;
-      if (!car.isPlayer) car.accel = 150 + car.id * 12;
+      if (!car.isPlayer) car.accel = 145 + car.id * 18;
       syncCarToTrack(car, track);
     }
   }
@@ -156,22 +159,37 @@
 
     car.aiBoostCooldown -= dt;
     const curve = curvature(track, car.meters);
-    car.aiTargetLateral = -curve * 40;
+    // 各自守左／右車道，彎道只微調，不要都擠同一條線
+    car.aiTargetLateral = car.aiLaneBias - curve * 18;
 
     for (const r of rivals) {
       if (r === car || r.flying) continue;
-      const dm = r.meters - car.meters;
-      if (dm > 0 && dm < 10) {
-        car.aiTargetLateral += Math.sign((car.lateral - r.lateral) || 1) * 16;
+      const dm = Math.abs(r.meters - car.meters);
+      const dLat = car.lateral - r.lateral;
+      // 前後接近時用力左右拉開，避免重疊
+      if (dm < 20 && Math.abs(dLat) < 70) {
+        const side =
+          Math.sign(dLat) ||
+          Math.sign(car.aiLaneBias - (r.aiLaneBias || 0)) ||
+          (car.id < r.id ? -1 : 1);
+        const sep = (1 - dm / 20) * 55;
+        car.aiTargetLateral += side * sep;
+      }
+      // 正後方時略偏外側超車，不要貼著對方
+      const ahead = r.meters - car.meters;
+      if (ahead > 0 && ahead < 14) {
+        const passSide =
+          Math.sign(car.aiLaneBias) || (car.id < r.id ? -1 : 1);
+        car.aiTargetLateral += passSide * 22;
       }
     }
 
     const limit = track.halfWidth - 32;
     car.aiTargetLateral = Math.max(-limit, Math.min(limit, car.aiTargetLateral));
-    car.lateral += (car.aiTargetLateral - car.lateral) * Math.min(1, 5 * dt);
+    car.lateral += (car.aiTargetLateral - car.lateral) * Math.min(1, 4.2 * dt);
 
-    // Very good, fast drivers
-    let maxSpd = (28 + car.id * 1.8) * SPEED_SCALE;
+    // 速度略有差異，噴射節奏錯開，減少並排重疊
+    let maxSpd = (26.5 + car.id * 2.4) * SPEED_SCALE;
     if (Math.abs(curve) > 0.15) maxSpd *= 0.88;
     if (car.boostTimer > 0) {
       maxSpd *= 1.65;
@@ -180,7 +198,7 @@
 
     if (car.aiBoostCooldown <= 0 && Math.abs(curve) < 0.01 && car.meters > 25) {
       car.boostTimer = 1.35;
-      car.aiBoostCooldown = 8 + car.id * 2.5;
+      car.aiBoostCooldown = 7 + car.id * 4;
     }
 
     car.speed += (maxSpd - car.speed) * Math.min(1, 3 * dt);

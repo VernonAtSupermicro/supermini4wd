@@ -32,7 +32,7 @@ Then visit `http://localhost:8080`.
 ## Course
 
 - Distance markers (triangles) every **5 meters**
-- Question-mark crates every **15 meters** (sometimes two appear)
+- Question-mark crates every **30 meters** (sometimes two appear)
 - `?` can grant a protector, restart, or accelerator/engine
 - Castles and knights decorate the circuit
 

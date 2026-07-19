@@ -543,42 +543,67 @@ function bindControls() {
     }
   });
 
-  for (const dir of ["up", "left", "right"]) {
-    const btn = document.getElementById(`btn-${dir}`);
-    const set = (v) => {
-      input[dir] = v;
-      btn.classList.toggle("active", v);
-      if (dir === "up") el.accelBtn.classList.toggle("active", v || input.accelHold);
-    };
+  /** 多指觸控：用 pointerId 追蹤，避免一手按住加速時另一手按功能鍵會鬆開 */
+  function bindHoldControl(btn, onHold) {
+    const pointers = new Set();
+    const sync = () => onHold(pointers.size > 0);
+
     btn.addEventListener("pointerdown", (e) => {
-      btn.setPointerCapture(e.pointerId);
-      set(true);
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      pointers.add(e.pointerId);
+      try {
+        btn.setPointerCapture(e.pointerId);
+      } catch (_) {
+        /* ignore */
+      }
+      sync();
+      e.preventDefault();
     });
-    btn.addEventListener("pointerup", () => set(false));
-    btn.addEventListener("pointercancel", () => set(false));
-    btn.addEventListener("pointerleave", () => set(false));
+
+    const release = (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.delete(e.pointerId);
+      sync();
+    };
+    btn.addEventListener("pointerup", release);
+    btn.addEventListener("pointercancel", release);
+    btn.addEventListener("lostpointercapture", release);
   }
 
-  const holdAccel = (v) => {
-    input.accelHold = v;
-    el.accelBtn.classList.toggle("active", v || input.up);
-  };
-  el.accelBtn.addEventListener("pointerdown", (e) => {
-    el.accelBtn.setPointerCapture(e.pointerId);
-    holdAccel(true);
+  for (const dir of ["up", "left", "right"]) {
+    const btn = document.getElementById(`btn-${dir}`);
+    bindHoldControl(btn, (held) => {
+      input[dir] = held;
+      btn.classList.toggle("active", held);
+      if (dir === "up") el.accelBtn.classList.toggle("active", held || input.accelHold);
+    });
+  }
+
+  bindHoldControl(el.accelBtn, (held) => {
+    input.accelHold = held;
+    el.accelBtn.classList.toggle("active", held || input.up);
   });
-  el.accelBtn.addEventListener("pointerup", () => holdAccel(false));
-  el.accelBtn.addEventListener("pointercancel", () => holdAccel(false));
-  el.accelBtn.addEventListener("pointerleave", () => holdAccel(false));
 
   el.accelSlider.addEventListener("input", () => {
     input.accel = Number(el.accelSlider.value);
     el.accelValue.textContent = String(Math.round(input.accel));
   });
 
-  document.getElementById("btn-protector").addEventListener("click", useProtector);
-  document.getElementById("btn-engine").addEventListener("click", useEngine);
-  document.getElementById("btn-restart").addEventListener("click", useRestart);
+  /** 功能鍵用 pointerdown，可與按住加速同時觸發（不依賴 click） */
+  function bindActionButton(id, action) {
+    const btn = document.getElementById(id);
+    btn.addEventListener("pointerdown", (e) => {
+      if (btn.disabled) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      action();
+    });
+  }
+
+  bindActionButton("btn-protector", useProtector);
+  bindActionButton("btn-engine", useEngine);
+  bindActionButton("btn-restart", useRestart);
 
   document.getElementById("btn-start").addEventListener("click", () => startLevel(1));
   document.getElementById("btn-title-shop").addEventListener("click", openShop);

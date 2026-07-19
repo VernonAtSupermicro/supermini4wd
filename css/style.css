@@ -203,6 +203,10 @@ body {
   opacity: 0.8;
 }
 
+.inv-name-short {
+  display: none;
+}
+
 kbd {
   display: inline-block;
   margin-left: 0.2em;
@@ -242,6 +246,9 @@ kbd {
   background: var(--stone);
   color: var(--parchment);
   font-size: 0.8rem;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .inv-btn.accent {
@@ -640,36 +647,48 @@ kbd {
 /* —— Mobile / tablet portrait —— */
 @media (max-width: 700px) {
   #app {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
     padding:
-      max(6px, env(safe-area-inset-top))
-      max(8px, env(safe-area-inset-right))
-      max(6px, env(safe-area-inset-bottom))
-      max(8px, env(safe-area-inset-left));
-    gap: 5px;
+      max(4px, env(safe-area-inset-top))
+      max(4px, env(safe-area-inset-right))
+      max(4px, env(safe-area-inset-bottom))
+      max(4px, env(safe-area-inset-left));
+    gap: 4px;
   }
 
   .top-bar {
-    gap: 6px;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .brand {
+    min-width: 0;
+    flex: 1 1 auto;
   }
 
   .brand-mark {
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
     border-radius: 6px;
   }
 
   .brand h1 {
-    font-size: 0.88rem;
+    font-size: 0.8rem;
   }
 
   .hud-stats {
-    gap: 4px;
+    gap: 3px;
+    flex-shrink: 1;
+    min-width: 0;
   }
 
   .stat {
     min-width: 0;
-    padding: 3px 6px;
-    font-size: 0.72rem;
+    padding: 2px 4px;
+    font-size: 0.68rem;
     border-radius: 6px;
   }
 
@@ -679,66 +698,100 @@ kbd {
   }
 
   .inventory {
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    min-width: 0;
   }
 
   .inv-item {
-    padding: 8px;
-    gap: 4px 8px;
+    min-width: 0;
+    padding: 5px 4px;
+    gap: 2px 4px;
+  }
+
+  .inv-name-full {
+    display: none;
+  }
+
+  .inv-name-short {
+    display: inline;
   }
 
   .inv-label {
-    font-size: 0.72rem;
+    font-size: 0.62rem;
+    letter-spacing: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .inv-item > span:nth-child(2) {
-    font-size: 1.05rem;
+    font-size: 0.95rem;
   }
 
   .inv-btn {
-    min-height: 36px;
-    padding: 6px 10px;
-    font-size: 0.85rem;
+    min-height: 32px;
+    min-width: 0;
+    width: 100%;
+    padding: 4px 2px;
+    font-size: 0.75rem;
   }
 
   .shop-open {
     grid-column: 1 / -1;
-    min-height: 42px;
-    font-size: 0.95rem;
+    min-height: 36px;
+    font-size: 0.85rem;
   }
 
   .controls {
-    grid-template-columns: auto 1fr;
-    gap: 10px;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    gap: 6px;
     padding-bottom: 2px;
+    min-width: 0;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 56px);
-    grid-template-rows: repeat(3, 48px);
-    gap: 6px;
+    grid-template-columns: repeat(3, minmax(36px, 11vw));
+    grid-template-rows: repeat(3, minmax(32px, 9vw));
+    gap: 3px;
+    justify-content: start;
   }
 
   .dir {
-    font-size: 1.2rem;
-    border-radius: 12px;
+    font-size: 1rem;
+    border-radius: 10px;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .accel-panel {
+    min-width: 0;
+    width: 100%;
+    gap: 4px;
   }
 
   .accel-btn {
-    width: min(200px, 88%);
-    height: 58px;
-    font-size: 1.05rem;
-    border-radius: 16px;
+    width: 100%;
+    max-width: 100%;
+    height: 48px;
+    font-size: 0.9rem;
+    border-radius: 12px;
   }
 
   #accel-slider {
-    width: min(220px, 95%);
-    height: 28px;
+    width: 100%;
+    max-width: 100%;
+    height: 24px;
+  }
+
+  .accel-readout {
+    font-size: 0.72rem;
   }
 
   .accel-readout strong {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
   }
 
   .howto-desktop {
@@ -842,22 +895,28 @@ kbd {
 /* Narrow phones */
 @media (max-width: 380px) {
   .brand h1 {
-    font-size: 0.8rem;
+    font-size: 0.72rem;
   }
 
   .stat {
-    padding: 3px 5px;
-    font-size: 0.68rem;
+    padding: 2px 3px;
+    font-size: 0.64rem;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 50px);
-    grid-template-rows: repeat(3, 44px);
+    grid-template-columns: repeat(3, minmax(32px, 10vw));
+    grid-template-rows: repeat(3, minmax(28px, 8vw));
+    gap: 2px;
   }
 
   .inv-btn {
-    min-height: 34px;
-    font-size: 0.8rem;
+    min-height: 30px;
+    font-size: 0.7rem;
+  }
+
+  .accel-btn {
+    height: 44px;
+    font-size: 0.82rem;
   }
 }
 
@@ -904,7 +963,7 @@ kbd {
   }
 
   .inventory {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-content: start;
   }
 
@@ -914,19 +973,21 @@ kbd {
   }
 
   .controls {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
     align-self: end;
+    min-width: 0;
   }
 
   .dpad {
-    grid-template-columns: repeat(3, 46px);
-    grid-template-rows: repeat(3, 38px);
-    gap: 4px;
+    grid-template-columns: repeat(3, minmax(34px, 8vw));
+    grid-template-rows: repeat(3, minmax(30px, 7vw));
+    gap: 3px;
   }
 
   .accel-btn {
-    height: 46px;
-    width: min(160px, 90%);
+    height: 42px;
+    width: 100%;
+    max-width: 100%;
   }
 
   .accel-readout {
@@ -950,20 +1011,8 @@ kbd {
   }
 }
 
-/* Touch devices: prefer larger hit targets even on wider tablets */
+/* Touch devices: mobile labels; larger hit targets only on wider screens */
 @media (pointer: coarse) {
-  .dir {
-    min-width: 48px;
-    min-height: 44px;
-  }
-
-  .inv-btn,
-  .shop-open,
-  .cta,
-  .shop-buy-btn {
-    min-height: 44px;
-  }
-
   .howto-desktop {
     display: none;
   }
@@ -982,6 +1031,20 @@ kbd {
 
   kbd {
     display: none;
+  }
+}
+
+@media (pointer: coarse) and (min-width: 701px) {
+  .dir {
+    min-width: 48px;
+    min-height: 44px;
+  }
+
+  .inv-btn,
+  .shop-open,
+  .cta,
+  .shop-buy-btn {
+    min-height: 44px;
   }
 }
 

@@ -138,9 +138,9 @@
       triangles.push({ ...p, meters: m });
     }
 
-    // Question marks every 15 m. Sometimes two appear when crossing two intervals.
+    // Question marks every 30 m (half density). Sometimes two appear side by side.
     const questionMarks = [];
-    for (let m = 15; m < totalMeters - 5; m += 15) {
+    for (let m = 30; m < totalMeters - 5; m += 30) {
       const count = Math.random() < 0.35 ? 2 : 1;
       for (let k = 0; k < count; k++) {
         const offset = k === 0 ? 0 : 3.5;
