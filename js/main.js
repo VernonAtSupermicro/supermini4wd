@@ -8,77 +8,91 @@ import {
 } from "./cars.js";
 import { resizeCanvas, drawScene } from "./render.js";
 
-const LEVEL_STARS = 100;
+const BASE_LEVEL_STARS = 100;
+const BASE_LEVEL_ENGINES = 2;
+const BASE_LEVEL_RESTARTS = 1;
+
+/** 第 1 關基準獎勵，之後每一關皆為上一關的兩倍 */
+function levelMultiplier(level) {
+  return 2 ** Math.max(0, (level || 1) - 1);
+}
+
+function levelStarReward(level) {
+  return BASE_LEVEL_STARS * levelMultiplier(level);
+}
+
+function addStock(s, key, amount) {
+  s[key] += amount;
+  return amount;
+}
 
 /** Shop catalog. Higher unlockLevel items appear after reaching that level. */
 const SHOP_CATALOG = [
   {
     id: "protector",
     name: "防護罩",
-    desc: "避免一次飛出軌道",
+    desc: "避免一次飛出軌道（可無限購買）",
     basePrice: 100,
     unlockLevel: 1,
     apply(s) {
-      if (s.protectors >= s.maxProtectors) return "防護罩已達上限";
-      s.protectors += 1;
+      addStock(s, "protectors", 1);
       return null;
     },
   },
   {
     id: "engine",
     name: "噴射引擎",
-    desc: "獲得一次超級噴射",
+    desc: "獲得一次超級噴射（可無限購買）",
     basePrice: 300,
     unlockLevel: 1,
     apply(s) {
-      s.engines += 1;
+      addStock(s, "engines", 1);
       return null;
     },
   },
   {
     id: "restart",
     name: "重啟",
-    desc: "獲得一次關卡內重啟",
+    desc: "獲得一次重啟機會（可無限購買）",
     basePrice: 200,
     unlockLevel: 1,
     apply(s) {
-      s.restarts += 1;
+      addStock(s, "restarts", 1);
       return null;
     },
   },
   {
     id: "armorPack",
     name: "裝甲包",
-    desc: "防護罩 +2，持有上限 +1",
+    desc: "防護罩 +2（可無限購買）",
     basePrice: 400,
     unlockLevel: 2,
     apply(s) {
-      s.maxProtectors += 1;
-      s.protectors = Math.min(s.maxProtectors, s.protectors + 2);
+      addStock(s, "protectors", 2);
       return null;
     },
   },
   {
     id: "nitroPack",
     name: "氮氣包",
-    desc: "一次獲得 3 次超級噴射",
+    desc: "一次獲得 3 次噴射（可無限購買）",
     basePrice: 600,
     unlockLevel: 2,
     apply(s) {
-      s.engines += 3;
+      addStock(s, "engines", 3);
       return null;
     },
   },
   {
     id: "commandKit",
     name: "指揮套件",
-    desc: "噴射 +2、重啟 +1、防護罩 +1",
+    desc: "噴射 +2、重啟 +1、防護罩 +1（可無限購買）",
     basePrice: 900,
     unlockLevel: 3,
     apply(s) {
-      s.engines += 2;
-      s.restarts += 1;
-      if (s.protectors < s.maxProtectors) s.protectors += 1;
+      addStock(s, "engines", 2);
+      addStock(s, "restarts", 1);
+      addStock(s, "protectors", 1);
       return null;
     },
   },
@@ -121,10 +135,8 @@ const state = {
   highestLevel: 1,
   stars: 250,
   protectors: 2,
-  maxProtectors: 2,
   engines: 0,
   restarts: 0,
-  restartUsedThisLevel: false,
   prices: Object.fromEntries(SHOP_CATALOG.map((item) => [item.id, item.basePrice])),
   track: null,
   cars: createCars(),
@@ -159,8 +171,7 @@ function syncHud() {
 
   document.getElementById("btn-protector").disabled = state.protectors <= 0 || !state.running;
   document.getElementById("btn-engine").disabled = state.engines <= 0 || !state.running;
-  document.getElementById("btn-restart").disabled =
-    state.restarts <= 0 || state.restartUsedThisLevel || !state.running;
+  document.getElementById("btn-restart").disabled = state.restarts <= 0 || !state.running;
 }
 
 function openShop() {
@@ -209,12 +220,12 @@ function startLevel(level = state.level, { grantKit = true } = {}) {
   state.level = level;
   state.highestLevel = Math.max(state.highestLevel, level);
   state.track = buildTrack(level);
-  // Entering a level (not retry) grants base kit on top of purchased stock
+  // Entering a level (not retry) grants kit; amount doubles each level
   if (grantKit) {
-    state.engines += 2;
-    state.restarts += 1;
+    const mult = levelMultiplier(level);
+    addStock(state, "engines", BASE_LEVEL_ENGINES * mult);
+    addStock(state, "restarts", BASE_LEVEL_RESTARTS * mult);
   }
-  state.restartUsedThisLevel = false;
   resetCarsOnTrack(state.cars, state.track);
   state.cam.x = state.cars[0].x;
   state.cam.y = state.cars[0].y;
@@ -225,7 +236,10 @@ function startLevel(level = state.level, { grantKit = true } = {}) {
   el.overlayResult.hidden = true;
   closeShop();
   syncHud();
-  toast(`第 ${level} 關 — 噴射引擎已就緒`);
+  const mult = levelMultiplier(level);
+  toast(
+    `第 ${level} 關 — 噴射 +${BASE_LEVEL_ENGINES * mult}、重啟 +${BASE_LEVEL_RESTARTS * mult}（通關 ★${levelStarReward(level)}）`
+  );
 }
 
 function useProtector() {
@@ -255,9 +269,8 @@ function useEngine() {
 }
 
 function useRestart() {
-  if (!state.running || state.restarts <= 0 || state.restartUsedThisLevel) return;
+  if (!state.running || state.restarts <= 0) return;
   state.restarts -= 1;
-  state.restartUsedThisLevel = true;
   const player = state.cars[0];
   const keepMeters = Math.max(0, player.meters - 8);
   player.crashed = false;
@@ -270,7 +283,7 @@ function useRestart() {
   player.finished = false;
   syncCarToTrack(player, state.track);
   syncHud();
-  toast("已使用重啟（本關一次）");
+  toast(`已使用重啟（剩餘 ${state.restarts}）`);
 }
 
 function onPlayerCrash() {
@@ -291,7 +304,7 @@ function onPlayerCrash() {
     return;
   }
   // Offer restart if available
-  if (state.restarts > 0 && !state.restartUsedThisLevel) {
+  if (state.restarts > 0) {
     useRestart();
     return;
   }
@@ -302,18 +315,13 @@ function pickupQuestion(q) {
   q.taken = true;
   const roll = Math.random();
   if (roll < 0.34) {
-    if (state.protectors < state.maxProtectors) {
-      state.protectors += 1;
-      toast("? → 防護罩");
-    } else {
-      state.stars += 25;
-      toast("? → 防護罩已滿 · +25 星");
-    }
+    addStock(state, "protectors", 1);
+    toast("? → 防護罩");
   } else if (roll < 0.67) {
-    state.restarts += 1;
+    addStock(state, "restarts", 1);
     toast("? → 重啟 +1");
   } else {
-    state.engines += 1;
+    addStock(state, "engines", 1);
     toast("? → 噴射引擎");
   }
   syncHud();
@@ -334,10 +342,12 @@ function showResult(won) {
   state.running = false;
   el.overlayResult.hidden = false;
   if (won) {
-    state.stars += LEVEL_STARS;
+    const reward = levelStarReward(state.level);
+    const nextReward = levelStarReward(state.level + 1);
+    state.stars += reward;
     el.resultTitle.textContent = "完成！";
     const place = placement();
-    el.resultBody.textContent = `名次 ${place}。+${LEVEL_STARS} 星，目前 ★ ${state.stars}。可先去商店補給，下一關會解鎖更多商品。`;
+    el.resultBody.textContent = `名次 ${place}。本關 +${reward} 星，目前 ★ ${state.stars}。下一關通關獎勵會變成 ★${nextReward}（兩倍）。`;
     document.getElementById("btn-next").hidden = false;
   } else {
     el.resultTitle.textContent = "飛出跑道！";

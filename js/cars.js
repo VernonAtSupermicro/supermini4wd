@@ -13,6 +13,8 @@ const COLORS = [
 ];
 
 const LANE_SPACING = 42;
+/** 速度恢復為原本（無額外倍率） */
+const SPEED_SCALE = 1;
 
 export function createCars() {
   return [0, 1, 2].map((i) => {
@@ -91,7 +93,7 @@ export function updatePlayer(car, input, dt, track) {
   car.lateral += steer * steerSpeed * dt;
 
   const half = track.halfWidth - 22;
-  let maxSpd = 8 + (car.accel / 200) * 30;
+  let maxSpd = (8 + (car.accel / 200) * 30) * SPEED_SCALE;
   if (car.boostTimer > 0) {
     maxSpd *= 1.9;
     car.boostTimer -= dt;
@@ -122,7 +124,7 @@ export function updatePlayer(car, input, dt, track) {
   syncCarToTrack(car, track);
 
   const over = Math.abs(car.lateral) - half;
-  const dangerous = car.boostTimer > 0 || car.speed > 24;
+  const dangerous = car.boostTimer > 0 || car.speed > 24 * SPEED_SCALE;
 
   // Boost + no turn on curve/edge → fly out
   if (car.boostTimer > 0 && sharpCurve(track, car.meters) && !input.left && !input.right) {
@@ -176,7 +178,7 @@ export function updateAI(car, dt, track, rivals) {
   car.lateral += (car.aiTargetLateral - car.lateral) * Math.min(1, 5 * dt);
 
   // Very good, fast drivers
-  let maxSpd = 28 + car.id * 1.8;
+  let maxSpd = (28 + car.id * 1.8) * SPEED_SCALE;
   if (Math.abs(curve) > 0.15) maxSpd *= 0.88;
   if (car.boostTimer > 0) {
     maxSpd *= 1.65;

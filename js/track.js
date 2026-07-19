@@ -7,15 +7,18 @@ export const PX_PER_METER = 1 / METERS_PER_PX;
  * Build a winding closed-ish race path through castle grounds.
  * Path is a sequence of waypoints in world pixels; cars race along it.
  */
+/** 只拉長賽道長度，不改變跑道寬度（再加倍 → 共 4 倍） */
+const LENGTH_SCALE = 4;
+
 export function buildTrack(level = 1) {
   if (level === 1) return finalizeTrack(buildLevel1Path(), level);
 
-  const lengthMeters = 180 + level * 40;
+  const lengthMeters = (180 + level * 40) * LENGTH_SCALE;
   const segments = Math.max(24, Math.floor(lengthMeters / 8));
   const points = [];
   const centerX = 0;
   const centerY = 0;
-  const baseRadius = 900 + level * 40;
+  const baseRadius = (900 + level * 40) * LENGTH_SCALE;
 
   for (let i = 0; i <= segments; i++) {
     const t = i / segments;
@@ -92,26 +95,26 @@ function buildLevel1Path() {
   }
 
   // Straight line to the next castle
-  straight(70);
+  straight(70 * LENGTH_SCALE);
   markCastle();
 
   // Turn around
-  turn(180, 180, 1);
+  turn(180, 180 * LENGTH_SCALE, 1);
 
   // Straight line to the next castle
-  straight(70);
+  straight(70 * LENGTH_SCALE);
   markCastle();
 
   // One 360°, then five more in a row
-  turn(360, 220, 1);
-  for (let i = 0; i < 5; i++) turn(360, 220, 1);
+  turn(360, 220 * LENGTH_SCALE, 1);
+  for (let i = 0; i < 5; i++) turn(360, 220 * LENGTH_SCALE, 1);
 
   // Straight line to the next castle
-  straight(70);
+  straight(70 * LENGTH_SCALE);
   markCastle();
 
   // 180° rotation
-  turn(180, 180, 1);
+  turn(180, 180 * LENGTH_SCALE, 1);
 
   return { points, castleSpots };
 }
