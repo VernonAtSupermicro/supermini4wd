@@ -8,9 +8,81 @@ import {
 } from "./cars.js";
 import { resizeCanvas, drawScene } from "./render.js";
 
-const PRICES = { protector: 100, engine: 300, restart: 200 };
 const LEVEL_STARS = 100;
-const MAX_PROTECTORS = 2;
+
+/** Shop catalog. Higher unlockLevel items appear after reaching that level. */
+const SHOP_CATALOG = [
+  {
+    id: "protector",
+    name: "防護罩",
+    desc: "避免一次飛出軌道",
+    basePrice: 100,
+    unlockLevel: 1,
+    apply(s) {
+      if (s.protectors >= s.maxProtectors) return "防護罩已達上限";
+      s.protectors += 1;
+      return null;
+    },
+  },
+  {
+    id: "engine",
+    name: "噴射引擎",
+    desc: "獲得一次超級噴射",
+    basePrice: 300,
+    unlockLevel: 1,
+    apply(s) {
+      s.engines += 1;
+      return null;
+    },
+  },
+  {
+    id: "restart",
+    name: "重啟",
+    desc: "獲得一次關卡內重啟",
+    basePrice: 200,
+    unlockLevel: 1,
+    apply(s) {
+      s.restarts += 1;
+      return null;
+    },
+  },
+  {
+    id: "armorPack",
+    name: "裝甲包",
+    desc: "防護罩 +2，持有上限 +1",
+    basePrice: 400,
+    unlockLevel: 2,
+    apply(s) {
+      s.maxProtectors += 1;
+      s.protectors = Math.min(s.maxProtectors, s.protectors + 2);
+      return null;
+    },
+  },
+  {
+    id: "nitroPack",
+    name: "氮氣包",
+    desc: "一次獲得 3 次超級噴射",
+    basePrice: 600,
+    unlockLevel: 2,
+    apply(s) {
+      s.engines += 3;
+      return null;
+    },
+  },
+  {
+    id: "commandKit",
+    name: "指揮套件",
+    desc: "噴射 +2、重啟 +1、防護罩 +1",
+    basePrice: 900,
+    unlockLevel: 3,
+    apply(s) {
+      s.engines += 2;
+      s.restarts += 1;
+      if (s.protectors < s.maxProtectors) s.protectors += 1;
+      return null;
+    },
+  },
+];
 
 const el = {
   canvas: document.getElementById("race-canvas"),
@@ -30,6 +102,8 @@ const el = {
   overlayResult: document.getElementById("overlay-result"),
   resultTitle: document.getElementById("result-title"),
   resultBody: document.getElementById("result-body"),
+  shopGrid: document.getElementById("shop-grid"),
+  shopStars: document.getElementById("shop-star-count"),
 };
 
 const input = {
@@ -44,11 +118,14 @@ const input = {
 const state = {
   running: false,
   level: 1,
-  stars: 0,
+  highestLevel: 1,
+  stars: 250,
   protectors: 2,
-  engines: 2,
-  restarts: 1,
+  maxProtectors: 2,
+  engines: 0,
+  restarts: 0,
   restartUsedThisLevel: false,
+  prices: Object.fromEntries(SHOP_CATALOG.map((item) => [item.id, item.basePrice])),
   track: null,
   cars: createCars(),
   cam: { x: 0, y: 0 },
@@ -78,6 +155,7 @@ function syncHud() {
   el.restarts.textContent = String(state.restarts);
   el.accelValue.textContent = String(Math.round(input.accel));
   el.accelSlider.value = String(Math.round(input.accel));
+  if (el.shopStars) el.shopStars.textContent = String(state.stars);
 
   document.getElementById("btn-protector").disabled = state.protectors <= 0 || !state.running;
   document.getElementById("btn-engine").disabled = state.engines <= 0 || !state.running;
@@ -85,12 +163,57 @@ function syncHud() {
     state.restarts <= 0 || state.restartUsedThisLevel || !state.running;
 }
 
-function startLevel(level = state.level) {
+function openShop() {
+  el.overlayShop.hidden = false;
+  renderShop();
+  setShopStatus("點擊「購買」扣星星並獲得物品。");
+}
+
+function closeShop() {
+  el.overlayShop.hidden = true;
+}
+
+function setShopStatus(msg) {
+  const status = document.getElementById("shop-status");
+  if (status) status.textContent = msg;
+}
+
+function renderShop() {
+  if (!el.shopGrid) return;
+  el.shopStars.textContent = String(state.stars);
+  el.shopGrid.innerHTML = "";
+
+  for (const item of SHOP_CATALOG) {
+    const unlocked = state.highestLevel >= item.unlockLevel;
+    const price = state.prices[item.id];
+    const canAfford = state.stars >= price;
+    const card = document.createElement("div");
+    card.className = `shop-card${unlocked ? "" : " locked"}`;
+    card.dataset.buy = item.id;
+    card.innerHTML = `
+      <span class="shop-name">${item.name}</span>
+      <span class="shop-desc">${item.desc}</span>
+      <span class="shop-price" data-price>${unlocked ? `★ ${price}` : `第 ${item.unlockLevel} 關解鎖`}</span>
+      ${unlocked ? `<span class="shop-meta">購買後下次 ★ ${price * 2}</span>` : ""}
+      <button type="button" class="shop-buy-btn" data-buy="${item.id}" ${
+        !unlocked || !canAfford ? "disabled" : ""
+      }>
+        ${!unlocked ? "未解鎖" : !canAfford ? "星幣不足" : `購買 ★ ${price}`}
+      </button>
+    `;
+    el.shopGrid.appendChild(card);
+  }
+}
+
+function startLevel(level = state.level, { grantKit = true } = {}) {
   state.level = level;
+  state.highestLevel = Math.max(state.highestLevel, level);
   state.track = buildTrack(level);
-  // Each level grants two engines and one restart charge
-  state.engines = 2;
-  state.restarts = 1;
+  // Entering a level (not retry) grants base kit on top of purchased stock
+  if (grantKit) {
+    state.engines += 2;
+    state.restarts += 1;
+  }
   state.restartUsedThisLevel = false;
   resetCarsOnTrack(state.cars, state.track);
   state.cam.x = state.cars[0].x;
@@ -100,23 +223,23 @@ function startLevel(level = state.level) {
   state.running = true;
   el.overlayTitle.hidden = true;
   el.overlayResult.hidden = true;
-  el.overlayShop.hidden = true;
+  closeShop();
   syncHud();
-  toast(`Level ${level} — two engines ready`);
+  toast(`第 ${level} 關 — 噴射引擎已就緒`);
 }
 
 function useProtector() {
   if (!state.running || state.protectors <= 0) return;
   const player = state.cars[0];
   if (player.shieldTimer > 0 || player.shieldActive) {
-    toast("Shield already active");
+    toast("防護罩已啟動");
     return;
   }
   state.protectors -= 1;
   player.shieldActive = true;
   player.shieldTimer = 6;
   syncHud();
-  toast("Protector armed");
+  toast("已裝備防護罩");
 }
 
 function useEngine() {
@@ -128,7 +251,7 @@ function useEngine() {
   // Quick charge: snap accel up
   input.accel = Math.min(200, Math.max(input.accel, 180));
   syncHud();
-  toast("Engine boost! Turn in time!");
+  toast("超級噴射！記得及時轉彎！");
 }
 
 function useRestart() {
@@ -147,7 +270,7 @@ function useRestart() {
   player.finished = false;
   syncCarToTrack(player, state.track);
   syncHud();
-  toast("Restart used (once per level)");
+  toast("已使用重啟（本關一次）");
 }
 
 function onPlayerCrash() {
@@ -164,7 +287,7 @@ function onPlayerCrash() {
     syncCarToTrack(player, state.track);
     player.shieldTimer = 2;
     syncHud();
-    toast("Protector saved you!");
+    toast("防護罩救了你！");
     return;
   }
   // Offer restart if available
@@ -179,27 +302,19 @@ function pickupQuestion(q) {
   q.taken = true;
   const roll = Math.random();
   if (roll < 0.34) {
-    if (state.protectors < MAX_PROTECTORS) {
+    if (state.protectors < state.maxProtectors) {
       state.protectors += 1;
-      toast("? → Protector");
+      toast("? → 防護罩");
     } else {
       state.stars += 25;
-      toast("? → Protector full · +25 stars");
+      toast("? → 防護罩已滿 · +25 星");
     }
   } else if (roll < 0.67) {
-    if (state.restarts < 1 && !state.restartUsedThisLevel) {
-      state.restarts = 1;
-      toast("? → Restart button");
-    } else if (state.restartUsedThisLevel) {
-      state.stars += 40;
-      toast("? → Restart already used · +40 stars");
-    } else {
-      state.stars += 40;
-      toast("? → Restart already ready · +40 stars");
-    }
+    state.restarts += 1;
+    toast("? → 重啟 +1");
   } else {
     state.engines += 1;
-    toast("? → Accelerator / Engine");
+    toast("? → 噴射引擎");
   }
   syncHud();
 }
@@ -220,14 +335,14 @@ function showResult(won) {
   el.overlayResult.hidden = false;
   if (won) {
     state.stars += LEVEL_STARS;
-    el.resultTitle.textContent = "Finish!";
+    el.resultTitle.textContent = "完成！";
     const place = placement();
-    el.resultBody.textContent = `You placed ${place}. +${LEVEL_STARS} stars. Total ★ ${state.stars}. Visit the shop for protectors, engines, and restart.`;
+    el.resultBody.textContent = `名次 ${place}。+${LEVEL_STARS} 星，目前 ★ ${state.stars}。可先去商店補給，下一關會解鎖更多商品。`;
     document.getElementById("btn-next").hidden = false;
   } else {
-    el.resultTitle.textContent = "Flew Out!";
+    el.resultTitle.textContent = "飛出跑道！";
     el.resultBody.textContent =
-      "No protector or restart left. The game restarts this level. Earn stars to stock the armory.";
+      "沒有防護罩或重啟可用。可先到商店購買，再重試本關。";
     document.getElementById("btn-next").hidden = true;
   }
   syncHud();
@@ -236,37 +351,35 @@ function showResult(won) {
 function placement() {
   const sorted = [...state.cars].sort((a, b) => b.meters - a.meters);
   const idx = sorted.findIndex((c) => c.isPlayer);
-  return ["1st", "2nd", "3rd"][idx] || "—";
+  return ["第 1 名", "第 2 名", "第 3 名"][idx] || "—";
 }
 
-function buy(item) {
-  const price = PRICES[item];
-  if (state.stars < price) {
-    toast("Not enough stars");
+function buy(itemId) {
+  const item = SHOP_CATALOG.find((entry) => entry.id === itemId);
+  if (!item) return;
+  if (state.highestLevel < item.unlockLevel) {
+    setShopStatus(`第 ${item.unlockLevel} 關後才解鎖`);
+    toast(`第 ${item.unlockLevel} 關後才解鎖`);
     return;
   }
-  if (item === "protector") {
-    if (state.protectors >= MAX_PROTECTORS) {
-      toast("Max 2 protectors — use one first");
-      return;
-    }
-    state.protectors += 1;
-  } else if (item === "engine") {
-    state.engines += 1;
-  } else if (item === "restart") {
-    if (state.restarts >= 1 && !state.restartUsedThisLevel) {
-      toast("Restart already ready");
-      return;
-    }
-    if (state.restartUsedThisLevel) {
-      toast("Restart already used this level");
-      return;
-    }
-    state.restarts = 1;
+  const price = state.prices[itemId];
+  if (state.stars < price) {
+    setShopStatus(`星幣不足（需要 ★ ${price}，目前 ★ ${state.stars}）`);
+    toast("星幣不足");
+    return;
+  }
+  const err = item.apply(state);
+  if (err) {
+    setShopStatus(err);
+    toast(err);
+    return;
   }
   state.stars -= price;
+  state.prices[itemId] = price * 2;
   syncHud();
-  toast(`Bought ${item}`);
+  renderShop();
+  setShopStatus(`已購買 ${item.name}，扣除 ★ ${price}，剩餘 ★ ${state.stars}`);
+  toast(`已購買 ${item.name}！-★${price}`);
 }
 
 function update(dt) {
@@ -329,6 +442,23 @@ function frame(ts) {
 }
 
 function bindControls() {
+  // 鎖定單螢幕：禁止滾輪造成頁面捲動
+  window.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+    },
+    { passive: false }
+  );
+  window.addEventListener(
+    "touchmove",
+    (e) => {
+      if (e.target.closest("input, button, .shop-buy-btn")) return;
+      e.preventDefault();
+    },
+    { passive: false }
+  );
+
   const dirMap = {
     ArrowUp: "up",
     KeyW: "up",
@@ -347,14 +477,41 @@ function bindControls() {
       document.getElementById(`btn-${d}`)?.classList.add("active");
       e.preventDefault();
     }
-    if (e.code === "Space") {
+    // 3 = accelerate (hold)
+    if (e.code === "Digit3" || e.code === "Numpad3") {
       input.accelHold = true;
       el.accelBtn.classList.add("active");
       e.preventDefault();
     }
-    if (e.code === "KeyE") useEngine();
-    if (e.code === "KeyQ") useProtector();
-    if (e.code === "KeyR") useRestart();
+    if (e.repeat) return;
+    // 1 = Start
+    if (e.code === "Digit1" || e.code === "Numpad1") {
+      if (!el.overlayTitle.hidden) {
+        startLevel(1);
+        e.preventDefault();
+      }
+    }
+    // 5 = super jet engine
+    if (e.code === "Digit5" || e.code === "Numpad5") {
+      useEngine();
+      e.preventDefault();
+    }
+    // 8 = protector / shield
+    if (e.code === "Digit8" || e.code === "Numpad8") {
+      useProtector();
+      e.preventDefault();
+    }
+    // 7 = restart
+    if (e.code === "Digit7" || e.code === "Numpad7") {
+      useRestart();
+      e.preventDefault();
+    }
+    // Q = open / close shop (purchase)
+    if (e.code === "KeyQ") {
+      if (el.overlayShop.hidden) openShop();
+      else closeShop();
+      e.preventDefault();
+    }
   });
 
   window.addEventListener("keyup", (e) => {
@@ -363,7 +520,7 @@ function bindControls() {
       input[d] = false;
       document.getElementById(`btn-${d}`)?.classList.remove("active");
     }
-    if (e.code === "Space") {
+    if (e.code === "Digit3" || e.code === "Numpad3") {
       input.accelHold = false;
       el.accelBtn.classList.remove("active");
     }
@@ -406,22 +563,23 @@ function bindControls() {
   document.getElementById("btn-restart").addEventListener("click", useRestart);
 
   document.getElementById("btn-start").addEventListener("click", () => startLevel(1));
-  document.getElementById("btn-shop").addEventListener("click", () => {
-    el.overlayShop.hidden = false;
-  });
-  document.getElementById("btn-close-shop").addEventListener("click", () => {
-    el.overlayShop.hidden = true;
-  });
+  document.getElementById("btn-title-shop").addEventListener("click", openShop);
+  document.getElementById("btn-result-shop").addEventListener("click", openShop);
+  document.getElementById("btn-shop").addEventListener("click", openShop);
+  document.getElementById("btn-close-shop").addEventListener("click", closeShop);
 
-  document.querySelectorAll(".shop-card").forEach((card) => {
-    card.addEventListener("click", () => buy(card.dataset.buy));
+  el.shopGrid.addEventListener("click", (e) => {
+    const btn = e.target.closest(".shop-buy-btn");
+    if (!btn || btn.disabled) return;
+    e.preventDefault();
+    buy(btn.dataset.buy);
   });
 
   document.getElementById("btn-next").addEventListener("click", () => {
-    startLevel(state.level + 1);
+    startLevel(state.level + 1, { grantKit: true });
   });
   document.getElementById("btn-retry").addEventListener("click", () => {
-    startLevel(state.level);
+    startLevel(state.level, { grantKit: false });
   });
 }
 

@@ -7,7 +7,7 @@ export function resizeCanvas(canvas) {
   const rect = canvas.getBoundingClientRect();
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const w = Math.max(320, Math.floor(rect.width * dpr));
-  const h = Math.max(180, Math.floor(w * (9 / 16)));
+  const h = Math.max(160, Math.floor(rect.height * dpr));
   if (canvas.width !== w || canvas.height !== h) {
     canvas.width = w;
     canvas.height = h;
@@ -61,32 +61,29 @@ function drawTrack(ctx, track) {
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
   ctx.strokeStyle = "#3d5c45";
-  ctx.lineWidth = track.halfWidth * 2 + 36;
+  ctx.lineWidth = track.halfWidth * 2 + 52;
   strokePath(ctx, pts);
 
-  // Dirt / stone track bed
-  ctx.strokeStyle = "#6b5a45";
-  ctx.lineWidth = track.halfWidth * 2 + 8;
+  // Runway shoulder
+  ctx.strokeStyle = "#4a4e52";
+  ctx.lineWidth = track.halfWidth * 2 + 16;
   strokePath(ctx, pts);
 
-  // Racing surface
-  const graded = ctx.createLinearGradient(pts[0].x, pts[0].y, pts[8]?.x || 0, pts[8]?.y || 0);
-  graded.addColorStop(0, "#8a7a62");
-  graded.addColorStop(1, "#7a6a54");
-  ctx.strokeStyle = "#8a7a62";
+  // Asphalt runway surface
+  ctx.strokeStyle = "#5a6068";
   ctx.lineWidth = track.halfWidth * 2;
   strokePath(ctx, pts);
 
-  // Edge stones
-  ctx.strokeStyle = "rgba(40, 32, 24, 0.55)";
-  ctx.lineWidth = 4;
-  strokeOffset(ctx, track, track.halfWidth);
-  strokeOffset(ctx, track, -track.halfWidth);
+  // Edge lines
+  ctx.strokeStyle = "rgba(240, 240, 245, 0.7)";
+  ctx.lineWidth = 5;
+  strokeOffset(ctx, track, track.halfWidth - 4);
+  strokeOffset(ctx, track, -(track.halfWidth - 4));
 
   // Center dashed line
-  ctx.setLineDash([18, 16]);
-  ctx.strokeStyle = "rgba(232, 217, 192, 0.35)";
-  ctx.lineWidth = 2;
+  ctx.setLineDash([28, 22]);
+  ctx.strokeStyle = "rgba(245, 220, 80, 0.55)";
+  ctx.lineWidth = 3;
   strokePath(ctx, pts);
   ctx.setLineDash([]);
 }
@@ -154,6 +151,7 @@ function drawProps(ctx, props, time) {
   for (const p of props) {
     ctx.save();
     ctx.translate(p.x, p.y);
+    ctx.scale(1.45, 1.45);
     if (p.type === "castle") drawCastle(ctx);
     else drawKnight(ctx, time);
     ctx.restore();

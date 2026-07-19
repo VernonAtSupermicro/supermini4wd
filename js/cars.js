@@ -7,14 +7,16 @@ import {
 } from "./track.js";
 
 const COLORS = [
-  { body: "#c0392b", trim: "#f5d76e", cab: "#2c3e50" },
-  { body: "#1e8449", trim: "#f7f1e3", cab: "#1a252f" },
-  { body: "#2471a3", trim: "#f4d03f", cab: "#1a252f" },
+  { body: "#6d7580", trim: "#c5ccd4", cab: "#1a2430", accent: "#b22234" },
+  { body: "#3d5c48", trim: "#a8c4b0", cab: "#142018", accent: "#f0e6c8" },
+  { body: "#3a4f66", trim: "#9bb0c4", cab: "#121820", accent: "#d4a017" },
 ];
+
+const LANE_SPACING = 42;
 
 export function createCars() {
   return [0, 1, 2].map((i) => {
-    const lane = (i - 1) * 28;
+    const lane = (i - 1) * LANE_SPACING;
     return {
       id: i,
       isPlayer: i === 0,
@@ -44,7 +46,7 @@ export function createCars() {
 export function resetCarsOnTrack(cars, track) {
   for (const car of cars) {
     car.meters = 2 + car.id * 0.5;
-    car.lateral = (car.id - 1) * 28;
+    car.lateral = (car.id - 1) * LANE_SPACING;
     car.speed = 0;
     car.boostTimer = 0;
     car.flying = false;
@@ -88,7 +90,7 @@ export function updatePlayer(car, input, dt, track) {
   const steerSpeed = drive < 0 ? 70 : 95;
   car.lateral += steer * steerSpeed * dt;
 
-  const half = track.halfWidth - 12;
+  const half = track.halfWidth - 22;
   let maxSpd = 8 + (car.accel / 200) * 30;
   if (car.boostTimer > 0) {
     maxSpd *= 1.9;
@@ -169,7 +171,7 @@ export function updateAI(car, dt, track, rivals) {
     }
   }
 
-  const limit = track.halfWidth - 20;
+  const limit = track.halfWidth - 32;
   car.aiTargetLateral = Math.max(-limit, Math.min(limit, car.aiTargetLateral));
   car.lateral += (car.aiTargetLateral - car.lateral) * Math.min(1, 5 * dt);
 
@@ -251,79 +253,163 @@ function sharpCurve(track, meters) {
   return Math.abs(curvature(track, meters)) > 0.16;
 }
 
+/** Draw an F-22 Raptor–style fighter (nose points +X). */
 export function drawCar(ctx, car) {
   ctx.save();
   ctx.translate(car.x, car.y);
   ctx.rotate(car.angle);
+  ctx.scale(1.55, 1.55);
 
   if (car.shieldTimer > 0 || car.shieldActive) {
     ctx.beginPath();
-    ctx.ellipse(0, 0, 28, 18, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 42, 28, 0, 0, Math.PI * 2);
     ctx.strokeStyle = "rgba(120, 210, 255, 0.9)";
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
     ctx.fillStyle = "rgba(120, 210, 255, 0.12)";
     ctx.fill();
   }
 
+  // Afterburner when boosting
   if (car.boostTimer > 0) {
-    ctx.fillStyle = "rgba(255, 140, 40, 0.6)";
+    const flicker = 8 + Math.random() * 10;
+    ctx.fillStyle = "rgba(255, 180, 60, 0.75)";
     ctx.beginPath();
-    ctx.moveTo(-22, -6);
-    ctx.lineTo(-40 - Math.random() * 8, 0);
-    ctx.lineTo(-22, 6);
+    ctx.moveTo(-30, -5);
+    ctx.lineTo(-30 - flicker, -1.5);
+    ctx.lineTo(-30 - flicker * 0.7, 0);
+    ctx.lineTo(-30 - flicker, 1.5);
+    ctx.lineTo(-30, 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(120, 200, 255, 0.55)";
+    ctx.beginPath();
+    ctx.moveTo(-30, -3);
+    ctx.lineTo(-30 - flicker * 0.55, 0);
+    ctx.lineTo(-30, 3);
+    ctx.closePath();
     ctx.fill();
   }
 
-  ctx.fillStyle = "#151515";
-  for (const [wx, wy] of [
-    [-14, -12],
-    [12, -12],
-    [-14, 12],
-    [12, 12],
-  ]) {
-    roundRect(ctx, wx - 6, wy - 4, 12, 8, 2);
-    ctx.fill();
-    ctx.fillStyle = "#666";
-    ctx.fillRect(wx - 3, wy - 2, 6, 4);
-    ctx.fillStyle = "#151515";
-  }
+  const body = car.color.body;
+  const trim = car.color.trim;
+  const cab = car.color.cab;
+  const accent = car.color.accent;
 
-  ctx.fillStyle = car.color.body;
-  roundRect(ctx, -16, -9, 32, 18, 4);
-  ctx.fill();
-
-  ctx.fillStyle = car.color.trim;
-  ctx.fillRect(6, -7, 10, 14);
-
-  ctx.fillStyle = car.color.cab;
-  roundRect(ctx, -8, -6, 12, 12, 2);
-  ctx.fill();
-
-  ctx.strokeStyle = car.color.trim;
-  ctx.lineWidth = 2;
+  // Main wings (diamond / trapezoid)
+  ctx.fillStyle = body;
   ctx.beginPath();
-  ctx.moveTo(-6, -7);
-  ctx.lineTo(-6, 7);
+  ctx.moveTo(6, 0);
+  ctx.lineTo(-6, -26);
+  ctx.lineTo(-22, -24);
+  ctx.lineTo(-18, 0);
+  ctx.lineTo(-22, 24);
+  ctx.lineTo(-6, 26);
+  ctx.closePath();
+  ctx.fill();
+
+  // Fuselage
+  ctx.fillStyle = trim;
+  ctx.beginPath();
+  ctx.moveTo(34, 0);
+  ctx.lineTo(18, -4.5);
+  ctx.lineTo(-28, -5.5);
+  ctx.lineTo(-32, -3);
+  ctx.lineTo(-32, 3);
+  ctx.lineTo(-28, 5.5);
+  ctx.lineTo(18, 4.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Darker belly stripe
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(28, 0);
+  ctx.lineTo(10, -2.2);
+  ctx.lineTo(-26, -2.8);
+  ctx.lineTo(-26, 2.8);
+  ctx.lineTo(10, 2.2);
+  ctx.closePath();
+  ctx.fill();
+
+  // Twin vertical stabilizers
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.moveTo(-18, -6);
+  ctx.lineTo(-30, -16);
+  ctx.lineTo(-26, -6);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-18, 6);
+  ctx.lineTo(-30, 16);
+  ctx.lineTo(-26, 6);
+  ctx.closePath();
+  ctx.fill();
+
+  // Horizontal tails
+  ctx.fillStyle = trim;
+  ctx.beginPath();
+  ctx.moveTo(-20, -5);
+  ctx.lineTo(-32, -12);
+  ctx.lineTo(-28, -5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-20, 5);
+  ctx.lineTo(-32, 12);
+  ctx.lineTo(-28, 5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Canopy
+  ctx.fillStyle = cab;
+  ctx.beginPath();
+  ctx.moveTo(14, 0);
+  ctx.lineTo(4, -3.2);
+  ctx.lineTo(-6, -2.8);
+  ctx.lineTo(-6, 2.8);
+  ctx.lineTo(4, 3.2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(180, 220, 255, 0.35)";
+  ctx.lineWidth = 1;
   ctx.stroke();
 
+  // Engine intakes hint
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fillRect(-24, -4.2, 6, 2.4);
+  ctx.fillRect(-24, 1.8, 6, 2.4);
+
+  // Nose tip
+  ctx.fillStyle = accent;
+  ctx.beginPath();
+  ctx.moveTo(34, 0);
+  ctx.lineTo(28, -2);
+  ctx.lineTo(28, 2);
+  ctx.closePath();
+  ctx.fill();
+
+  // USAF-style wing marking (player) / accent stripe (AI)
   if (car.isPlayer) {
     ctx.fillStyle = "#fff";
     ctx.beginPath();
-    ctx.arc(2, 0, 2.4, 0, Math.PI * 2);
+    ctx.arc(-4, -14, 3.2, 0, Math.PI * 2);
     ctx.fill();
+    ctx.fillStyle = "#b22234";
+    ctx.beginPath();
+    ctx.arc(-4, -14, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#3c3b6e";
+    ctx.fillRect(-7.2, -15.2, 2.2, 2.4);
+  } else {
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-2, -12);
+    ctx.lineTo(-14, -12);
+    ctx.stroke();
   }
 
   ctx.restore();
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  const rr = Math.min(r, w / 2, h / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + rr, y);
-  ctx.arcTo(x + w, y, x + w, y + h, rr);
-  ctx.arcTo(x + w, y + h, x, y + h, rr);
-  ctx.arcTo(x, y + h, x, y, rr);
-  ctx.arcTo(x, y, x + w, y, rr);
-  ctx.closePath();
 }

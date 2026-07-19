@@ -21,10 +21,12 @@ Then visit `http://localhost:8080`.
 | ◀ / A | Left |
 | ▶ / D | Right |
 | Directions combine | e.g. right + reverse = right and back |
-| White **HOLD** / Space | Acceleration (0–200) |
-| Engine / E | Boost (2 per level) — turn in time or fly out |
-| Protector / Q | Arm shield (max 2 held) |
-| Restart / R | Once per level |
+| **1** | Start race |
+| **3** (hold) | Acceleration (0–200) |
+| **5** | Super jet engine boost (2 per level) |
+| **8** | Protector / shield (max 2 held) |
+| **7** | Restart (once per level) |
+| **Q** | Open / close shop (purchase) |
 
 ## Course
 
@@ -35,10 +37,11 @@ Then visit `http://localhost:8080`.
 
 ## Stars & shop
 
-- **+100 stars** for finishing a level
-- Protector: **100★** (max 2; buy again after using them)
-- Engine: **300★**
-- Restart: **200★**
+- Start with **250★**; **+100★** for finishing a level
+- Title screen and result screen both have a **Shop** button (also **Q**)
+- Click an item to buy it; **that item’s price doubles** after every purchase
+- Level 2+ and Level 3+ unlock extra shop packs (armor, nitro, command kit)
+- Each new level also grants **+2 engines** and **+1 restart** on top of what you already own
 
 ## Cars
 
