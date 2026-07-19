@@ -4,10 +4,12 @@ Online web racing game with three four-wheel-drive mini cars on a castle-and-kni
 
 ## Play
 
-Open `index.html` via a local server (ES modules require HTTP):
+Double-click `index.html` to open it in Chrome (or any browser). No local server needed.
+
+Optional local server:
 
 ```bash
-python3 -m http.server 8080
+python -m http.server 8080
 ```
 
 Then visit `http://localhost:8080`.

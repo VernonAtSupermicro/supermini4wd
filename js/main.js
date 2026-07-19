@@ -1,12 +1,16 @@
-import { buildTrack } from "./track.js";
-import {
-  createCars,
-  resetCarsOnTrack,
-  updatePlayer,
-  updateAI,
-  syncCarToTrack,
-} from "./cars.js";
-import { resizeCanvas, drawScene } from "./render.js";
+(function (Game) {
+  "use strict";
+
+  const {
+    buildTrack,
+    createCars,
+    resetCarsOnTrack,
+    updatePlayer,
+    updateAI,
+    syncCarToTrack,
+    resizeCanvas,
+    drawScene,
+  } = Game;
 
 const BASE_LEVEL_STARS = 100;
 const BASE_LEVEL_ENGINES = 2;
@@ -593,3 +597,4 @@ state.running = false;
 bindControls();
 syncHud();
 requestAnimationFrame(frame);
+})(window.Game = window.Game || {});
