@@ -1,0 +1,26 @@
+---
+description: 改完後自動 commit 並 push 到 origin/main
+alwaysApply: true
+---
+
+# 自動 Commit 與 Push（main）
+
+完成程式修改後（任務告一段落、可交付時），**主動**執行：
+
+1. 確認目前在 `main`（若不在，先切回 `main`；不要另開 feature branch）。
+2. `git status` / `git diff` 檢視變更。
+3. 自行撰寫 **繁體中文** commit message（簡短說明「為什麼」；不要問使用者要寫什麼）。
+4. `git add` 相關檔案 → `git commit` → `git push origin main`。
+5. 回報已推送；若 push 失敗，說明原因並協助排除。
+
+## 硬性限制
+
+- **不要**新建 branch、**不要**開 PR（除非使用者明確要求）。
+- **不要**要求使用者自己打 commit message。
+- 不要 commit 機密（`.env`、金鑰、憑證等）。
+- 僅在本對話有實際檔案變更時才 commit；無變更則跳過。
+- 使用 HEREDOC / 對應的 PowerShell here-string 傳遞 commit message，避免格式錯誤。
+
+## 例外
+
+僅當使用者明確說「先不要 commit / 不要 push / 開 PR」時才跳過。
